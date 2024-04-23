@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sangeetha Search</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+<body>
+    <h1>Sangeetha Search</h1>
+    <label for="inputData">Enter song, artist, or album:</label>
+    <input type="text" id="inputData">
+    <button id="submitButton">Submit</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById("submitButton").addEventListener("click", function () {
+            const inputData = document.getElementById("inputData").value;
+            
+            // Call the Shazam API by the entered artist name, song, or album
+            searchShazam(inputData);
+        });
+
+        async function searchShazam(searchTerm) {
+            try {
+                const API_KEY = 'd0dc335517msh42d6d4218fb22e8p1ebf86jsn7e0906f4c8d1'; // 
+                const resultElement = document.getElementById("result");
+
+                // Initialize an array to store all the hits
+                let allHits = [];
+
+                // Send multiple request to get a total of 20 results (5 results per request)
+                for (let offset = 0; offset < 20; offset += 5) {
+                    // Make a GET request to the Shazam API
+                    const response = await axios.get(
+                        `https://shazam.p.rapidapi.com/search?term=${searchTerm}&locale=en-US&offset=${offset}&limit=5`,
+                        {
+                            headers: {
+                                'X-RapidAPI-Key': API_KEY,
+                                'X-RapidAPI-Host': 'shazam.p.rapidapi.com',
+                            },
+                        }
+                    );
+
+                    if (response.status === 200) {
+                        const hits = response.data.tracks.hits;
+                        allHits = allHits.concat(hits);
+                    } else {
+                        console.error('HTTP error:', response.statusText);
+                    }
+                }
+
+                if (allHits.length === 0) {
+                    resultElement.textContent = "No results found.";
+                } else {
+                    // Create a container for the results
+                    const container = document.createElement("div");
+
+                    // Loop through all the hits and create elements for each track
+                    for (let i = 0; i < allHits.length; i++) {
+                        const hit = allHits[i];
+                        const track = hit.track;
+
+                        // Create a div element for each track
+                        const trackDiv = document.createElement("div");
+
+                        // Check if album cover information is available
+                        if (track.images && track.images.coverart) {
+                            // Create an image element for the album cover
+                            const img = document.createElement("img");
+                            img.src = track.images.coverart;
+                            img.alt = track.title;
+                            img.style.width = "100px"; // Size adjustment for album cover
+
+                            // Append the image to the track div
+                            trackDiv.appendChild(img);
+                        }
+
+                        // Create a paragraph element for the track information
+                        const trackInfo = document.createElement("p");
+                        trackInfo.textContent = `${track.title} by ${track.subtitle}`;
+
+                        // Append the track information to the track div
+                        trackDiv.appendChild(trackInfo);
+
+                        // Append the track div to the container
+                        container.appendChild(trackDiv);
+                    }
+
+                    // Clear previous results and add the container to the result element
+                    resultElement.innerHTML = "";
+                    resultElement.appendChild(container);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
